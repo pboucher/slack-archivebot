@@ -6,6 +6,8 @@ following criteria:
 * if the channel is empty; or
 * if the channel has had no activity for the last X days.
 
+A configurable message will be posted to the channel prior to archival.
+
 ## Use
 
 The poject uses [`godep`](https://github.com/tools/godep) to manage
@@ -37,10 +39,15 @@ The following environment variables are used to configure the script:
 
 * `ARCHIVEBOT_SLACK_TOKEN`: the Slack [Web API key](https://api.slack.com/web)
   for your team.
-* `ARCHIVEBOT_INACTIVITY_DAYS`: the number of days' inactivity after which to
-  archive a channel (default: `30`).
 * `ARCHIVEBOT_NOTIFY`: a Slack user or channel (e.g. `#general` or `@tblair`)
   to notify when something goes wrong.
+* `ARCHIVEBOT_INACTIVE_DAYS`: the number of days' inactivity after which to
+  archive a channel (default: `30`).
+* `ARCHIVEBOT_INACTIVE_MESSAGE`: A customized message to post to an inactive channel before it is archived. The default message if none is provided is: "**We will now be archiving this channel because it has been inactive for X days.**" where X is defined by `ARCHIVEBOT_INACTIVE_DAYS`.
+* `ARCHIVEBOT_NO_INACTIVES`: Set this to "**true**" to disable archiving of inactive channels. Any other value or unset will archive inactive channels.
+* `ARCHIVEBOT_EMPTY_MESSAGE`: A customized message to post to an empty channel before it is archived. The default message if none is provided is: "**We will now be archiving this channel because it no longer has any members.**"
+* `ARCHIVEBOT_NO_EMPTIES`: Set this to "**true**" to disable archiving of empty channels. Any other value or unset will archive empty channels.
+* `ARCHIVEBOT_CHANNEL_WHITELIST`: A comma separated list of channel names (without # symbols) that will be excluded from the archival list. You should at least include your general channel here to avoid errors when attempting to archive the general channel.
 
 Note: you must use an API key for a regular Slack user account.  You _cannot_
 use a bot user account, because bot users don't have permission to archive

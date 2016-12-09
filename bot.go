@@ -52,15 +52,27 @@ func main() {
 
 func archiveEmptyChannels(api *slack.Slack, c []slack.Channel) {
 	empty := filterEmptyChannels(api, c)
-	archiveChannels(api, empty, "emptiness")
+	message := os.Getenv("ARCHIVEBOT_EMPTY_MESSAGE")
+	if len(message) == 0 {
+		message = "We will now be archiving this channel because it no longer has any members."
+	}
+	archiveChannels(api, empty, "emptiness", message)
 }
 
 func archiveInactiveChannels(api *slack.Slack, c []slack.Channel) {
 	inactive := filterInactiveChannels(api, c)
-	archiveChannels(api, inactive, "inactivity")
+	message := os.Getenv("ARCHIVEBOT_INACTIVE_MESSAGE")
+	inactiveDays, _ := strconv.ParseInt(os.Getenv("ARCHIVEBOT_INACTIVE_DAYS"), 10, 32)
+	if len(message) == 0 {
+		message = fmt.Sprintf(
+			"We will now be archiving this channel because it has been inactive for %d days.",
+			inactiveDays,
+		)
+	}
+	archiveChannels(api, inactive, "inactivity", message)
 }
 
-func archiveChannels(api *slack.Slack, c []slack.Channel, reason string) {
+func archiveChannels(api *slack.Slack, c []slack.Channel, reason string, archive_message string) {
 	var wg sync.WaitGroup
 
 	for _, channel := range c {
@@ -69,6 +81,21 @@ func archiveChannels(api *slack.Slack, c []slack.Channel, reason string) {
 
 		go func(c slack.Channel) {
 			defer wg.Done()
+
+			params := slack.PostMessageParameters{}
+			attachment := slack.Attachment{
+				Pretext: "Automatic Channel Archival",
+				Text:    archive_message,
+			}
+			params.Attachments = []slack.Attachment{attachment}
+			params.LinkNames = 1
+			if _, _, postMessageError := api.PostMessage(
+				c.Id, "", params); postMessageError != nil {
+				postMessageErrorMessage := fmt.Sprintf(
+					"Error posting archive message to Slack: %s\n", postMessageError)
+				log.Printf(postMessageErrorMessage)
+			}
+
 			if err := api.ArchiveChannel(c.Id); err != nil {
 				message := fmt.Sprintf(
 					"Error archiving channel #%s (%s): %s\n", c.Name, c.Id, err)

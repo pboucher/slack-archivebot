@@ -48,6 +48,7 @@ The following environment variables are used to configure the script:
 * `ARCHIVEBOT_EMPTY_MESSAGE`: A customized message to post to an empty channel before it is archived. The default message if none is provided is: "**We will now be archiving this channel because it no longer has any members.**"
 * `ARCHIVEBOT_NO_EMPTIES`: Set this to "**true**" to disable archiving of empty channels. Any other value or unset will archive empty channels.
 * `ARCHIVEBOT_CHANNEL_WHITELIST`: A comma separated list of channel names (without # symbols) that will be excluded from the archival list. You should at least include your general channel here to avoid errors when attempting to archive the general channel.
+* `ARCHIVEBOT_DEBUG`: Set this to "**true**" to enable debugging messages that will be sent to `ARCHIVEBOT_NOTIFY`. Any other value does nothing. This is especially usefull during testing or initial runs.
 
 Note: you must use an API key for a regular Slack user account.  You _cannot_
 use a bot user account, because bot users don't have permission to archive

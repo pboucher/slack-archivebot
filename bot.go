@@ -23,6 +23,8 @@ func main() {
 		return
 	}
 
+	channels = filterWhitelistedChannels(api, channels)
+
 	var wg sync.WaitGroup
 
 	if os.Getenv("ARCHIVEBOT_NO_EMPTIES") == "true" {
@@ -87,6 +89,22 @@ func archiveChannels(api *slack.Slack, c []slack.Channel, reason string) {
 	}
 
 	wg.Wait()
+}
+
+func filterWhitelistedChannels(api *slack.Slack, c []slack.Channel) []slack.Channel {
+	whitelist_names := strings.Split(os.Getenv("ARCHIVEBOT_CHANNEL_WHITELIST"), ",")
+
+	if len(whitelist_names) != 0 && whitelist_names[0] != "" {
+		for i := len(c)-1; i >= 0; i-- {
+			for _, whitelist_name := range whitelist_names {
+				if c[i].Name == whitelist_name {
+					c = append(c[:i], c[i+1:]...)
+				}
+			}
+		}
+	}
+
+	return c
 }
 
 func filterEmptyChannels(api *slack.Slack, c []slack.Channel) []slack.Channel {

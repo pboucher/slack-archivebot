@@ -24,17 +24,26 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(2)
 
-	go func(c []slack.Channel) {
-		defer wg.Done()
-		archiveEmptyChannels(api, c)
-	}(channels)
+	if os.Getenv("ARCHIVEBOT_NO_EMPTIES") == "true" {
+		log.Printf("Skipping archiving of empty channels because ARCHIVEBOT_NO_EMPTIES was set to true")
+	} else {
+		wg.Add(1)
+		go func(c []slack.Channel) {
+			defer wg.Done()
+			archiveEmptyChannels(api, c)
+		}(channels)
+	}
 
-	go func(c []slack.Channel) {
-		defer wg.Done()
-		archiveInactiveChannels(api, c)
-	}(channels)
+	if os.Getenv("ARCHIVEBOT_NO_INACTIVES") == "true" {
+		log.Printf("Skipping archiving of inactive channels because ARCHIVEBOT_NO_INACTIVES was set to true")
+	} else {
+		wg.Add(1)
+		go func(c []slack.Channel) {
+			defer wg.Done()
+			archiveInactiveChannels(api, c)
+		}(channels)
+	}
 
 	wg.Wait()
 }

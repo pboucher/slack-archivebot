@@ -60,9 +60,26 @@ func archiveEmptyChannels(api *slack.Slack, c []slack.Channel) {
 }
 
 func archiveInactiveChannels(api *slack.Slack, c []slack.Channel) {
+	inactiveDays := getInactiveDays()
+	onErrorNotify := os.Getenv("ARCHIVEBOT_NOTIFY")
+	debugMessages := os.Getenv("ARCHIVEBOT_DEBUG")
+
+	if onErrorNotify != "" && debugMessages == "true" {
+		message := fmt.Sprintf(
+			"Inactive channels are being archived with a limit of %d days.",
+			inactiveDays,
+		)
+		params := slack.PostMessageParameters{}
+		if _, _, postMessageError := api.PostMessage(
+			onErrorNotify, message, params); postMessageError != nil {
+			postMessageErrorMessage := fmt.Sprintf(
+				"Error posting inactive debug message to Slack: %s\n", postMessageError)
+			log.Printf(postMessageErrorMessage)
+		}
+	}
+
 	inactive := filterInactiveChannels(api, c)
 	message := os.Getenv("ARCHIVEBOT_INACTIVE_MESSAGE")
-	inactiveDays, _ := strconv.ParseInt(os.Getenv("ARCHIVEBOT_INACTIVE_DAYS"), 10, 32)
 	if len(message) == 0 {
 		message = fmt.Sprintf(
 			"We will now be archiving this channel because it has been inactive for %d days.",
@@ -150,7 +167,7 @@ type LastChannelMessage struct {
 }
 
 func filterInactiveChannels(api *slack.Slack, c []slack.Channel) []slack.Channel {
-	inactiveDays, _ := strconv.ParseInt(os.Getenv("ARCHIVEBOT_INACTIVE_DAYS"), 10, 32)
+	inactiveDays := getInactiveDays()
 	if inactiveDays == 0 {
 		inactiveDays = 30
 	}
@@ -175,6 +192,11 @@ func filterInactiveChannels(api *slack.Slack, c []slack.Channel) []slack.Channel
 
 	close(res)
 	return channels
+}
+
+func getInactiveDays() int64 {
+	inactiveDays, _ := strconv.ParseInt(os.Getenv("ARCHIVEBOT_INACTIVE_DAYS"), 10, 32)
+	return inactiveDays
 }
 
 func lastMessageTimestamp(api *slack.Slack, channel slack.Channel) (int64, error) {

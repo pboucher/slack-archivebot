@@ -15,7 +15,9 @@ import (
 func main() {
 	slackToken := os.Getenv("ARCHIVEBOT_SLACK_TOKEN")
 	api := slack.New(slackToken)
-	//api.SetDebug(true)
+	if os.Getenv("ARCHIVEBOT_DEBUG") == "true" {
+		api.SetDebug(true)
+	}
 
 	channels, err := api.GetChannels(true)
 	if err != nil {
@@ -70,8 +72,8 @@ func archiveInactiveChannels(api *slack.Slack, c []slack.Channel) {
 			inactiveDays,
 		)
 		params := slack.PostMessageParameters{}
-		if _, _, postMessageError := api.PostMessage(
-			onErrorNotify, message, params); postMessageError != nil {
+		_, _, postMessageError := api.PostMessage(onErrorNotify, message, params)
+		if postMessageError != nil {
 			postMessageErrorMessage := fmt.Sprintf(
 				"Error posting inactive debug message to Slack: %s\n", postMessageError)
 			log.Printf(postMessageErrorMessage)
@@ -106,14 +108,15 @@ func archiveChannels(api *slack.Slack, c []slack.Channel, reason string, archive
 			}
 			params.Attachments = []slack.Attachment{attachment}
 			params.LinkNames = 1
-			if _, _, postMessageError := api.PostMessage(
-				c.Id, "", params); postMessageError != nil {
+			_, _, postMessageError := api.PostMessage(c.Id, "", params)
+			if postMessageError != nil {
 				postMessageErrorMessage := fmt.Sprintf(
 					"Error posting archive message to Slack: %s\n", postMessageError)
 				log.Printf(postMessageErrorMessage)
 			}
 
-			if err := api.ArchiveChannel(c.Id); err != nil {
+			err := api.ArchiveChannel(c.Id)
+			if err != nil {
 				message := fmt.Sprintf(
 					"Error archiving channel #%s (%s): %s\n", c.Name, c.Id, err)
 				log.Printf(message)
@@ -121,8 +124,8 @@ func archiveChannels(api *slack.Slack, c []slack.Channel, reason string, archive
 				onErrorNotify := os.Getenv("ARCHIVEBOT_NOTIFY")
 				if onErrorNotify != "" {
 					params := slack.PostMessageParameters{}
-					if _, _, postMessageError := api.PostMessage(
-						onErrorNotify, message, params); postMessageError != nil {
+					_, _, postMessageError := api.PostMessage(onErrorNotify, message, params)
+					if postMessageError != nil {
 						postMessageErrorMessage := fmt.Sprintf(
 							"Error posting error message to Slack: %s\n", postMessageError)
 						log.Printf(postMessageErrorMessage)
